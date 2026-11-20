@@ -2,10 +2,11 @@
     "name": "Gal Gal Soccer",
     "description": "",
     "dependencies": {
-        "device": "*"
+        "device": "*",
+        "hw---stm32f401": "*"
     },
     "files": [
-        "main.blocks",
+        "stills.ts",
         "main.ts",
         "README.md",
         "assets.json"
@@ -20,5 +21,23 @@
     "supportedTargets": [
         "arcade"
     ],
-    "preferredEditor": "blocksprj"
+    "preferredEditor": "tsprj",
+    "palette": [
+        "#000000",
+        "#FFFFFF",
+        "#E02430",
+        "#B0785A",
+        "#FF8135",
+        "#FFF609",
+        "#249CA3",
+        "#78DC52",
+        "#003FAD",
+        "#87F2FF",
+        "#8A8A8A",
+        "#C8C8C8",
+        "#D8A82C",
+        "#F2C6A6",
+        "#5A3A28",
+        "#000000"
+    ]
 }
