@@ -2,7 +2,7 @@
 //  GAL GAL SOCCER  -  גל גל להב
 //  Welcome -> Player card -> 1 Penalties -> 2 Skills -> 3 Tackle -> 4 Fight -> Champion
 //  All on-screen text is Hebrew, drawn with our own pixel font (right-to-left).
-//  Custom colors live in pxt.json "palette": 3 = tan skin, a/b = grays, c = gold, d = skin, e = dark brown
+//  Custom colors live in pxt.json "palette": 3 = tan skin, a = purple, b = gray, c = gold, d = skin, e = dark brown
 // ============================================================
 
 namespace SpriteKind {
@@ -12,54 +12,30 @@ namespace SpriteKind {
 }
 
 // ---------------------------------------------------------------- Hebrew pixel font
-// Each glyph is 5 wide. Rows are separated by spaces, 7 body rows.
-// "U" prefix = has 2 rows going up (lamed), "D" prefix = has 2 rows going down (final letters).
+// Each glyph is 5 wide and 11 tall: 7 body rows, lamed goes 2 rows up, final letters go 2 rows down.
 
 const HEB_CHARS = "אבגדהוזחטיכךלמםנןסעפףצץקרשת"
-const HEB_GLYPHS = [
-    "#...# .#..# ..#.# ..##. .#.#. .#..# .#..#",          // א
-    "####. ...#. ...#. ...#. ...#. ...#. #####",          // ב
-    "###.. ..#.. ..#.. ..#.. ..##. .#.#. #..#.",          // ג
-    "##### ...#. ...#. ...#. ...#. ...#. ...#.",          // ד
-    "##### ....# ....# #...# #...# #...# #...#",          // ה
-    ".##.. ..#.. ..#.. ..#.. ..#.. ..#.. ..#..",          // ו
-    "##### ..#.. ..#.. ..#.. ..#.. ..#.. ..#..",          // ז
-    "##### #...# #...# #...# #...# #...# #...#",          // ח
-    "#..## #.#.# #...# #...# #...# #...# #####",          // ט
-    ".##.. ..#.. ..#.. ..... ..... ..... .....",          // י
-    "####. ....# ....# ....# ....# ....# ####.",          // כ
-    "D##### ....# ....# ....# ....# ....# ....# ....# ....#",   // ך
-    "U#.... #.... ##### ....# ....# ...#. ..#.. .#... .#...",   // ל
-    "#.##. .#..# #...# #...# #...# #...# #.###",          // מ
-    "##### #...# #...# #...# #...# #...# #####",          // ם
-    ".##.. ...#. ...#. ...#. ...#. ...#. ####.",          // נ
-    "D.##.. ..#.. ..#.. ..#.. ..#.. ..#.. ..#.. ..#.. ..#..",   // ן
-    "####. #...# #...# #...# #...# #...# .###.",          // ס
-    "#...# #...# .#..# ..#.# ...#. ..#.. ##...",          // ע
-    "##### #...# ##..# ....# ....# ....# #####",          // פ
-    "D##### #...# ##..# ....# ....# ....# ....# ....# ....#",   // ף
-    "#...# #...# .#.#. ..#.. ...#. ....# #####",          // צ
-    "D#...# #..#. #.#.. ##... #.... #.... #.... #.... #....",   // ץ
-    "D##### ....# ....# #...# #..#. #.... #.... #.... #....",   // ק
-    "####. ....# ....# ....# ....# ....# ....#",          // ר
-    "#.#.# #.#.# #.#.# #.#.# #..## #...# #####",          // ש
-    "##### .#..# .#..# .#..# .#..# .#..# ##..#",          // ת
-]
+// each glyph = 10 bytes: first row (0 for tall letters, 2 otherwise), then up to 9 rows of 5 bits
+const HEB_FONT = hex`
+    02110905060a09090000021e02020202021f0000021c040404060a120000021f0202020202020000
+    021f0101111111110000020c0404040404040000021f0404040404040000021f1111111111110000
+    021315111111111f0000020c0404000000000000021e01010101011e0000021f0101010101010101
+    0010101f01010204080802160911111111170000021f11111111111f0000020c02020202021e0000
+    020c0404040404040404021e11111111110e000002111109050204180000021f11190101011f0000
+    021f11190101010101010211110a0402011f000002111214181010101010021f0101111210101010
+    021e0101010101010000021515151513111f0000021f0909090909190000
+`
 
 const glyphCache: Image[] = []
 function glyphImg(i: number, color: number): Image {
     const key = color * 32 + i
     while (glyphCache.length <= key) glyphCache.push(null)
     if (glyphCache[key]) return glyphCache[key]
-    let src = HEB_GLYPHS[i]
-    let row0 = 2
-    if (src.charAt(0) == "U") { row0 = 0; src = src.substr(1) }
-    else if (src.charAt(0) == "D") { src = src.substr(1) }
-    const rows = src.split(" ")
     const im = image.create(5, 11)
-    for (let y = 0; y < rows.length; y++) {
+    for (let y = 0; y < 9; y++) {
+        const bits = HEB_FONT[i * 10 + 1 + y]
         for (let x = 0; x < 5; x++) {
-            if (rows[y].charAt(x) == "#") im.setPixel(x, row0 + y, color)
+            if ((bits >> (4 - x)) & 1) im.setPixel(x, HEB_FONT[i * 10] + y, color)
         }
     }
     glyphCache[key] = im
@@ -105,179 +81,57 @@ function textImg(s: string, color: number, shadow: number): Image {
     drawHeb(im, vis, 0, 0, color)
     return im
 }
+// big text is doubled only if it still fits on the screen (the device can't double over 126 px anyway)
 function bigTextImg(s: string, color: number, shadow: number): Image {
-    return textImg(s, color, shadow).doubled()
+    const t = textImg(s, color, shadow)
+    return t.width > 80 ? t : t.doubled()
 }
 
 // ---------------------------------------------------------------- photos of Gal
 
-const PHOTO_CARD = img`
-    aaaaaaaaaaaaaabdbaeea33aa3233bbbeabaab1bbbbbbb1b
-    aaaaaaaaaaaaaabdbaee333aaeeebbbbeeeeeab1bbbbb11b
-    aaaaaaaaaaaaaabdbaee3e3aaefebbaefffffeeaaaaaaaae
-    aaaaaaaaaaaaaabdbae3333daeeaaeffffffffeeeffffffe
-    aaaaaaaaaaaaaabdbad33d33bddbefffffffffffeffffffe
-    aaaaaaaaaaaaaabdbbde3d33dddefffffffffffffffffffe
-    aaaaaaaaaaaaaabdbbaffaaadddeffffeefeeffffffffffa
-    aaaaaaaaaaaaaabdbaaaeaddbbbefffeee3eeeeeffffffeb
-    aaaaaaaaaaaaaabddadddddbbbbaffe333de3eeeffffffab
-    aaaaaaaaaaaaaaadbbbbbbbbbbbeffe3ddd33e33effffedd
-    aaaaaaaaaaaaaaabbbdddddddddafe3333333aaaeefffabb
-    aaaaaaaaaaaaaaabbbddddddddd3f33eee333ee3eefffabb
-    aaaaaaaaaaaaaaabbbdbbbbbbb33e33eee33eeeeaeffebbb
-    aaaaaaaaaaaaaaabbbdddddddd3333d3ee3deee3afffaddd
-    aaaaaaaaaaaaaaabbbddddddddd333dd33dda3aa3fffbbbb
-    aaaaaaaaaaaaaaabbbdddddddbd333ddddddddd3effa1bbb
-    aaaaaaaaaaaaaaabbbdbbbbbbbbd33ddd3333dd3effbbb1b
-    aaaaaaaaaaaaaaabbbddddddddddd33dddd3dd33ffabbbba
-    aaaaaaaaaaaaaaabbbdddddddddbb333333333daffbbbbba
-    aaaaaaaaaaaaaaabbbbbbbbbbbbbd333333333beffabbbba
-    aaaaaaaaaaaaaaabbbbbbbbbbbbba333dd333baffffeb1be
-    aaaaaaaaaaaaaaabbbbbbbbbbd3ff33333333beeeeaabbbe
-    aaaaaaaaaaaaaaaababbbd3322ffe3333e33eebbbbbbbbbe
-    aaaaaaaaaaaaaaaabbd2222222ff33333333ff23bbbbbbbe
-    aaaaaaeeaaaaaaaaa2222222eeffe333333eff223bbbb1be
-    aaaaaaeeaaaaaaaae2222ee222efed33333ffe2222dbbaae
-    aaaaaaeaaaaaa322222ee222222ffdd3333ffe222223aaae
-    aaaaeaaeaaa2222222222222222ffeddd3ffe22222223aae
-    aaaaeaeeeae222222222eeeeee2efffeefff22222e222aae
-    aeaaaaeeadee22222222eee222222fffffe22e2222e22aae
-    aeaaaeee3d3f22222e222e22222222eee2222eee222223ae
-    aaaaaee3dd3eabbaaee22222222222222222222eeeee23ae
-    aaaaaeedd3abbbb1b8aee222222222222222222effe223ae
-    aaaaaeaddb1111111aab8eee22222222222222effff22eae
-    aaaaaaddabb11bbabbb88aeee2222222222223bafffe2eee
-    aaaaeada1baeee88a1a88aeee22222222223bb11baffeeee
-    aaaaeddb11b88888a1b8feae22222222222bb1dd11beeaee
-    aaaead3bba888888aaa8ea1e2222222222e3d11dd11eeaee
-    aaaeddeaabbbbab1a8aeeb1ee222222222eedd1dd1afaaee
-    aaaaddaabbbab11beaaa81bee222222222e33ddddd33aaee
-    aaaadddaaaaaab8ef81bb1bee22222222223dddddd33aaee
-    aaae3d33daab118ff88bb1bee22222222233ddddddd3aaee
-    aaaae3deeb1111beff8a8bafe2222222231d3333ddd3eeea
-    aaaee3ddeeabbb1af88aa8eeeee222222b11b333333eeeea
-    aaaeea33d3bbab1be88aafeeee222222e111bbbaeeeeeeee
-    aaaeeaae3333aabbeb8eeeeeee22222eea11bbaeeeeeeaee
-    aaeeaaaa33e3aaaaabaeeeeeee22222eaaea11eeeeeeeeee
-    aaeeaaaeaeeeeaaeaaaeeeeee22e22eaaabaeefeeeeeeeee
-    aaeaaaaaaaeeeeeeeaeeeee22eee2e3eaaeaaffeeeeeeeee
-    aaeaaaaaaaaaaeaeaae2e2222222eeb1aeaafffeeeeeeeee
-    aaeaaeeeeaaaeaaeaae2222e222ee22b1baeeffeeaaeeeee
-    aeaaaaeeaaaaeaaeae222eeeeee2222e3b12effaeeeeeeee
-    aaaaaaaaaaaaaaaeae22eeeeeee222222ee2efeaaaeeeeee
-    aaaaaaaaaaaaaaeeae2eeeeeeeeee222e222efeaeeeeeeee
-    aaaaaaaaaaaaaaaaaee2eeeeeeee222e2222efeaeeeeeeee
-    aaaaaaaaaaaaaaaaaafe2eeeeee22ee22222efeeeeeeeeee
-    abaaaeaaaaaaaaeaaeff222e2e22e222eee2eeaeeeeeeeee
-    aaaaaaaaaaaaaaaaaeffee2222222222eee2feaaaaeeeeee
-    aaaaaaaaaaaaaaaaafffeee2222222222222feaaaaeeeeee
-    aaaaaaaaaaaaaaaaafffeeeee2222222222efaaaaeeeeeee
-    aaaaaaaaaaaaaaaaaeff2eeeeee22222222eeaaaaeeeeeee
-    aaaaaaaaaaaaaaaaaaaee2eeeeae2222222eeeaaaeeeeeee
-    aaaaaaaaaaaaaaaaaaaa33eeeaa22222222eeaaaaaeeeeee
-    aaaaaaaaaaaaaaaaaaaa33eeeaae22222223eaaaaaaaaaee
-    aaaaaaaaaaaaaaaaaaaa3eeeaaae22222223eaaaaaaaaaee
-    aaaaaaaaaaaaaaaaaaaa3ee3aaae222222eaaaaaaaaaaaae
-    aaaaaaaaaaaaaaaaaaaa3ee3aaee22222eeaaaaaaaaaaaae
-    aaaaaaaaaaaaaaaaaaaa3eeaaaea2222222aaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaaaaaeaaeaeae222222aaaaaaaeeaaaa
-    aaaaaaaaaaaaaaaeaaaa1b1aeeea3222223aaaaaaaeeaaaa
-    aaaaaaaaaeaaaaaeaae8aaaaeeeaa33333aaaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaeaaea8888eeeaa33d333aaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaaeaa88aeaaaa333333aaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaae3a8aaeaaaaa3ee33aaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaae3baaaaaaaaa33e3aaaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaae3bbbbaaaaaa33e3aaaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaaeebabbaaaaaaa3eaaaaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaaeeabaaeaaaaa1aabaaaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaaeeeaa8eaaaaa111baaaaaaaaaaaaaa
-    aaaaaaaaaaaaaaaaaaeeeeeeeaaaaaaba8aaaaaaaaaaaaaa
+const PHOTO_CARD = hex`
+    b35b0e331b0e1f1b030e4f1e232be35b0f330d0b0e0f130eff0f0eb31b0d011b018d0eaf1e4f0eb35b0d432d0eff2f0e
+    b35b031f2b2d4f4e9f0bc31b010d1b231d1b0d0e2f1e0f133e5f0e0dd30b018d0b01031f0e0d030b0d130f1e5f0b0dd3
+    bb0d0e1f032d1b230b0e4f010dc34b7d01030f0e332b1d0b1e2f03010db35b7d01332e233e032f0b1dd33b3d4b431e03
+    0d5e1f0e011dc34b8d130b0d031e030d2e030d2f0b011dd33b8d231d1b1d432f012dc34b8d238d0b0e1f03210dd3db13
+    2d330d1b2f0b210bd33bfd3d0b031f0b011d010bd33bad030b0d530d0b1f111d01e33bad130b0d43012f030b21e33b9d
+    331d231b4f2d0ed33b1d4b0d031f0d132b13013e030b1d0b0ec35b1d1b03121f030d0b431e0d1b3d010b0e632e333b0d
+    621f630b1f024b0d010b0e531e631b821f0e0d531f222d110b0e531e730e321e320f0e0d431f0e324b0e431e63421e52
+    1f1d1b0d031f52230b0ea3f21f0e2d031f0e62130b0e532e030f825e127f82834e0f721e624f0e92732e230ff2822e42
+    030b0e431e031d23011b030f0ef2324e02731e1d033b211b030ff2120e1f0e12931d712b1ef24f12730e1d2b311b112b
+    1e0fb21b032f12a3110b0e3f2b0f0e030f0eb21b210e1f02031e330e1d0b210b4e010b0e1f0b0ea21b010d03210e0203
+    1e632b1e6b030e0b010fa2030d111d114e230e1d0e6b110e0f0b0e0f111ea24d010b0f731d031b514b0e010b1e920b03
+    4d932d7b0e0f0b411e928da31d030b214f310f0e82037d731e1d1f0b413f2b030f0e82010d130b3d031e731d0f0e2b0d
+    010b2f1b2e820b110d533e331e131d03012b112f1b1f1e620e410bb31e130e1d232b6e821e310b0e931eb30b0d033e72
+    0e3b110f0e931ee34e520e0b333e234e331b534e13922e1b0e030b1f2ef3730e920e111e1b2f037e432e93c20d112e1f
+    b31bc3e211020e1fa31bd3f2122ef393f2224e731be3f2120e0f132e432bd30b0f0ef20e0f031e132e132be31fb22e02
+    1f533e3bc30e1fb2130e020f0e731e0bf32f021ec20f831e0bf32f023ea20f336ef3131f124e721e336ef333222e0b03
+    62833e3bf313120e030b72635e0bf3432e1372a31ef3531e230e62f3f383520ef3431bf313421e0bf3f373620bf3e31b
+    0e030b2e1352631ef373210b2e1342731ef3630e2b0e931bf3f36e232df3f3233bf3731b634b533b0e531ee3db533bf3
+    73db530d2bf373
 `
-const PHOTO_TROPHY = img`
-    aeaaaabffeafefefefeaafeee22e222eeee3eeeeeeeeeeebbeaefeea
-    3b111aaffaaefefefeeeaf3ae2e22ceeeeeeeeefeeeeeaeeaabefeaa
-    ab111dfffeefeefefeeeefee222e2eeeeeeeefeefefeeeeaaefeabbb
-    ebdbbaffffeeeefeffeeffeee22e2eeeeeeeeefeeeefeeeeeaabbbbb
-    a3acacefeeaeeeeeeeeefffee222efeeeeeeeeefeeeefeeeea1bbbba
-    eeaaaeeeeeceeeeeaeaeeeef223eefefefeeeeeeeeeeeeeaeebbaaab
-    aeffeeeeeaeeeeeeeeeeeeeee22eeffefeeeeeaeeaeeeeeaeeaaabba
-    daeeeeeeeeaeeeeeeeeeaeee3e22feffefeeeafeeeeaeaeeaeebaaea
-    a3bbbaeeeeceececeeeeeeae22eeefeefeefaafeaaeeaeaeeaeaaabb
-    aeb1baeeeaeeeeeeeceaeeeec2cefefeeee33ffa33eeaeeefaebbaae
-    eaad3aeceeaececeeeeeeeaeee2fefe3eeeefe3333fedeeefeeaeaae
-    eeaceaeeeceeaeeceeeaeeeceeefef3c3dc33dddd3eed3efeeeeaaaa
-    aeaaacaeeeaececeaceeeeaec3efe33333ddcdcdcee3c3efefeaaaae
-    eefeeaeeeeeceaeceeaeaeeaac3ee333eee233d33e3d33effeeaaaae
-    feeeeeeeacaaacbacecececececeed33333e33d33dddd3efeeaaaaae
-    eceeaeacaaacbbcbbcaaeaeac3c33cd2eeee33dcd2e3c33feeaaaaae
-    cacccaceabdacbcbcbcececeac333dc33e3333d333eee33eeeaaaaae
-    cacacaeaadbdddbddcaacaeacc3cdcdd33333ddceee33e3eeaaaaaae
-    ccacaeecad1d1ddddcdcacaeccdd3ddcd3ddcddc33eeec3faaaaaaae
-    cacaeeacbd1dddddcacaeacaacc3dcddddcdcddcd3333d3aeaaaaaae
-    ccaceaccad1d1dddd3ceecacecdc3dcdcddcdddd3d3ddc33aeaaaaaa
-    dccaeacbcbdbdddddc3eecaacac3cd3dcdcdddcddcddd332eaaaaaab
-    cacaecdcea3b1ddddcceedcaecacd3c3d333dddcdddcdc3aaaeaaaaa
-    cacaebcaaccdddddddc3ecacaceccd33dd32c3cdddddcd3eaaaaaaae
-    ccacaacacaaccddcdc3eccaccacaccd23cdd33cdcdcdd3aaaaeaaaae
-    dccaaacacacdd3cddccccdcacecc33dc233d3ddcdcdcdeaaaaaaaeae
-    cbcdcaacacacc2dcc3dddccacacac3dd33232333c3d3eeaaeaaeaaae
-    ccacaeadcbcdcddddddccdcaccac3cdd3dd3323cd33eaaaaaaaaaaae
-    dcacacacdcadcdcdcdc3dd3eeeec33cdd32d3dd3d3eaaaaaaeaeaaae
-    caccacacaecdcdcddcddcc3feecac33dddd3c3c3eeaaaaaaeaaaaeae
-    bbaacaaee3cdcddcdcdcddceeecc333cdcddd3deeaaaaaaaaaeaaaae
-    aaabecaecacdcdcd3ddc3dcde333d3333dcd333eaaaaaaaaeaaaeaae
-    eeabeacaac3cd3dcdcddddc3f33c3c33e3333c3eaaaaaaaaaeaaaaee
-    aebaeacaa3cddcddcddcc33ef333333333333d3eeaaaaaaeaaeaeaae
-    eabeeacacaccddcdddcd3333f33cd3333333c3eeeaaaaeaaeaaaaaee
-    ebaeeacaccd3cdddcd3e3d3ef33333333333d3eeeaaeeaeaaeaeaaae
-    abaeeacacacddcdcd33333aefe3cd333c333eefeaeaeaaaeaaaaeaee
-    baeeeacac3cdcdd3333edecaffee33cd33eeeeeeeaeaeaeaeaeaaaaf
-    baeeecacac3dddc33da3ceaeeeffeeeeefeefeaeeeaaaaaaaaaeaeaf
-    aeeeacacac3c33333a3baeeffeeefefefeeeaeeaeeeaeaeeaeaaaaee
-    eeeeecacc33d3dce3d3dcfeeeeeeeeaeaeaeeaeeeaeaaaaaeaeaeaaf
-    eeeacaca333c3d3eca3bcefeeeeeeeeeeeeaeeaeaeaaeaeaaaaeaeaf
-    eeeecacac3c3cd2e33cbceeeeeeeeaeaeeeeafeeaeaeaeaeaeaaeaee
-    eeeacacac33d3cc33cbdaeeeeeeeeeeeeaeafaeaeeaeaaeaeaeaaeaf
-    eeacacac3c3cdd3c3adbcfeeeeeeaeeaeeeeaeaeaeaeeaaeaaaeaeaf
-    eeecacacacd3dc3cecadaeeeeeeeeeeaeaeaeeaeeaeeaeaeaeaeaeaf
-    eeacacaccd3dcd3c3cbdceeeeeeaeafaeeaeaeeaeeeaeaeaeaeaeaee
-    eceacaca3dcddc3c3dcbaafeeeeeeeeeaeeaeaeeaeeeaeaeaeaeaeaf
-    eacaaeaccd3ddcc3cbdccaeeeeeeaeaeeaeeeeaeeeeaeaeaeaeaeaef
-    eeeeeaca3dcdcdc3ecbbcaeeeeeeeeeeeaeaaeaeeeaeeaeaeaeaeeaf
-    eeeeeeaccd3ddc33ecbdbceeeeeeeaaaaeaeeaeeeeeaeaeaeaeaeaef
-    acaaaca33dcdddcc33dbdaeeeeeaaaaaaaaaaeaeeeaeaeaeeaeeeeef
-    caacaacac3dcdccccaddbaeeeefaafefeeaabafeeeeeaeaeeaeaeafe
-    acaacaa33d3ddce3eabbaabaaeefeeaaaaefaaefeeeeeeeaeaeeaeef
-    cacaacac3cdcdecacabbbdddcafeeeaccccafefeaeaeaeeeeaeeeeef
-    acacace3333dc3cbcbdddddddaeeeeaccccceefeeaeeeeaeaeeaeaef
-    caaacaac3333e3cbddddddddaeeeeeccccccefaeeeeaeeeaeaeeaeaf
-    acacaecac3ec23cdcddd1bbaeeaeeeacccc3ffeeaeeeaaeaeeaeeaef
-    cacaeacaa3cd33cbaaabbbaabaeeeeeecceefeeeeaaeaeaeaeeaeaee
-    acacacacacd2deaeeaabbbbbeeeeeeeeeeeefeaeeeeaeaeeaeeeeeaf
-    cacacaeacacdc3aaaaaaabbeeefffeeeeeeeefeaeeeeeaeeaeaeeeee
-    acacaecacacdcccccacececccc33aefffeffaefeaeaeaeaeaeeeeefe
-    cacaeacacacdd33acccaca3cddcdcdca3eeeeaeeeaeeeeaeeaeeeeff
-    acacacacacacdc33d3c3e3c3ccdcddcdddddaeeaeeaeaeeaeeeaeffe
-    cacacacacaeeee3eeeeeffee3ccdcddcdcdddaeeaeeaeaeeaeeefefe
-    acacacacaceefffffefefeffee3cccdcdcdcdddeeeaeeaeaeeeffffe
-    cbaacacacaeeeffefefeefefffee3ccdcdcdccd3aeeeaeeaaefffffa
-    addcacacaaeefefefeeeeefeeffeee3ccdcdcdcdcdaeeeaeeefefffa
-    ccacacacaaeeffeeeefeeeefefefffe33cccdcdc3333efeaeefefeea
-    bcbcbcacceeeeeeeefeeeeeeeefeefffee333c3cdcd3effeafeffeae
-    cbcacacbaeeeffeeeeeeefeefeefefeffffffee3233efeeeaefeffaa
-    cacbcbcaaeeeeeeeeeeeeeeeeeefeefefeffffffeefeeeeeaeefeeae
-    dcbcacbceeeefeeeeeeeeeeeeeeeefeeffefefeeeeefeeefaeeffaae
-    cbcacbcaeeeeeeeeeeeeeeeeeeeeeeeeeefefefeeeeeeeefaeefffaa
-    cacdcacaeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaeffeae
-    dcbcbcaeeeeeeeeaeaeaeeeeeeeeeeeeefefeeeeeeeeeeeeeeaefeae
-    cbcacbaeeeeeeeeeeeeeeeaeeeeeeeeeeeeeeeeeeeeeeeeeeaeefeae
-    cacbccaeeeeeeeeeeeaeeeeeeeeeeeeeeeeeeaeeeeeeeeeeeeaaffea
-    dcbcbcbaeefefeeaeeeeaeeeeeeeeeeeeeeeaeeaeeeeeeeeeaaeefff
-    cbcacbcbbafffffeeaeeeeeeeeeeeaeeaefeaeeeeeeeeeeeeeaaffff
-    dcacbcbcbeffffffeeeeeaeeaeeeeeeefffaaaeeeeeeeeeeeeaaeffe
-    cbcbcbdbbeffffffffeeeeeeeeaeeaefffeaeceeeeeeeeeeeeaafffe
-    dcbcbcbcbaffffffffffeeaeaeeeeeffffeacaeeeeeeeeeeeeaeffee
-    dcbcbdddbafffffffffffffeeeaeefffffeaeeeceeeeeeeeeeeeffea
+const PHOTO_TROPHY = hex`
+    133b1f030e4f0e330e52ce1b133e03210d031f0b7e33426e1f5e1b031f23312f1e4f5e32fe2e0b21033b2f8e2f0e22fe
+    1e0b211b131b032e13ae220ffe0e03010b030e0b034f1e134e331e224fae131e4b035e13ae224f1e134e530b1e0b1311
+    0d5e631e220e1f6e0f131e131e232b0e03010d0b2e535e220e1f0e030f2e0f430c3e031b1f1e0bd35e2f331e2d230c4e
+    1f1ef3532e032c5d030f0d0c0e2f8e132eb31c0f0e0d032e030c1d030e2c0e1f5e3f2e0c0d1b1d0b730c1e0d536d030f
+    5e0f331c030d3b2d531c332e132d031e030c7e3c0d030e0b016d730c1d0c331d033e136e3c230d215d0c233c1d4c1d03
+    0e0f130c0e1f4e2c237d0c532cad330c5e1f1c0d1e0d0c0b213d130e5ced230f4e1c0d0e031d030b5d130e2c131cdd0c
+    024f0e0b4c0d230d211d0c1e0d0b7c0d136d1c035f0e4c0d236d030e0d0b4c4d236d7f2c0b730c1d130c0d034c1d139d
+    1e5f0e2d6c7d7c1d330d3c032e6f3c0e0b0d4c3d9c3d330c0d031f1e6f4c0b8d0c031d032e0c131d2c2d0c034e6f0b2c
+    0d338d0c030f0e336d0c6e6f2b030c2e037d2c1e2c134d0c030f5e6f030e0d030c0b230c9d030e2c630c0e1f4e6f030e
+    010f1c131c7d0c030f0e2c531c6e7f0e1b0f2c130c6d130c1e2c531c1e030f1e8f3e331c5d0e230e0f0d433c4eaf1b0f
+    0e330c4d0c030e0c131f030c3d0c136e9f0d031e030c0d030c3d130b4e2f0e231e1f3e130e8f0b2e1c0d130c1d0c031b
+    030d1e9f6e030b0e7f2e032c132c030e1b1d3fee230e6f2e032c230c0d331d0ffe0e436f2e3c230c0d331d0ffe1e330e
+    5f1e032c134c132d0ffe1e330e5f1e7c1d1c330ffe6e5f0e136c1d230c0103fe7e5f0e431c3d031c1d0b030ffe5e5f03
+    6c3d0c032d0c03fe4e130e4f4e031c3d0c131d0c03fe7e4f4e130c3d0c030e0d110c5e131b03ce4f0c2b0c130c3d1c03
+    0b11033f532b5e132e4f4c130c2d0c130e2b239e0d0b4f4e4f4c131c1d330b211d0b0f2e3cce4f4c230c1d030c8d2e03
+    4c0e1f8e4f4c637d0b1f1e034c1f9e4f5c130e0c134d012b4e032cce4f8c1d132e111b0d0c7e1fae4f6c031d0c0e231b
+    0d110e3f4e1fae4f7c033d0c831e5fbe4f7c031d0c130d1c131c3d0c13de5f8c031d3c232c8d039e5f8c2f3e3f0e031c
+    7d038e5f0c1b3c0d030ebf0e030c7d0c6e035f0b011d2c0d030e5f1e5f0e1c6d0c134e4f0e3d2c0d1e4f3e6f032c2d3c
+    033e4f0e3d1c0d0b1e1f7e7f0e134c0d031f2e2f1e0c2d1c0d031e1f9eaf0e235e2f1e1c4d1e1fbeef1e0f030e1f2e5d
+    0b1e1fde7f8e032f1e5dfefe5e1f1e4d0bfe5e3fbe1f1e4d03fe0e6fae0f131f1e4d0b2fee1ffe2e2f5d0b033ffefe0e
+    2f6d015fde1f0e0c039e0b032f7d6fbe2f238e0f0b032f6d0b0e8f6e3f0e1c137e0f0b0e1f0e7d03af3e5f437e022f0e
 `
 
 // ---------------------------------------------------------------- art
@@ -475,6 +329,8 @@ const ARROW_DOWN = flippedY(ARROW_UP)
 // ---------------------------------------------------------------- helpers
 
 let keyBuf: string[] = []
+// which game is running: 0 = Alona, 1 = Yiftach, 2 = Gal
+let currentGame = 2
 let totalScore = 0
 
 controller.up.onEvent(ControllerButtonEvent.Pressed, () => { keyBuf.push("U") })
@@ -509,7 +365,6 @@ function clearAll() {
     for (const k of kinds) {
         for (const s of sprites.allOfKind(k)) s.destroy()
     }
-    effects.confetti.endScreenEffect()
     scene.centerCameraAt(80, 60)
 }
 
@@ -519,12 +374,20 @@ function printCenter(bg: Image, s: string, y: number, color: number) {
 function drawCenter(bg: Image, im: Image, y: number) {
     bg.drawTransparentImage(im, Math.floor((160 - im.width) / 2), y)
 }
+// swap a sprite's picture but keep it centered where it was (text changes width)
+function setImageCentered(s: Sprite, im: Image) {
+    const x = s.x
+    const y = s.y
+    s.setImage(im)
+    s.setPosition(x, y)
+}
+function mk(im: Image, kind: number): Sprite { return ghost(sprites.create(im, kind)) }
 function ghost(s: Sprite): Sprite {
     s.setFlag(SpriteFlag.Ghost, true)
     return s
 }
 function uiSprite(im: Image, x: number, y: number): Sprite {
-    const s = ghost(sprites.create(im, SpriteKind.UI))
+    const s = mk(im, SpriteKind.UI)
     s.setPosition(x, y)
     s.z = 50
     s.setFlag(SpriteFlag.RelativeToCamera, true)
@@ -536,6 +399,25 @@ function banner(s: string, color: number, y: number, ms: number): Sprite {
     sp.z = 100
     sp.lifespan = ms
     return sp
+}
+// our own little confetti (the built-in particle effects take too much room on the device)
+function fx(x: number, y: number, spread: number, n: number, ms: number) {
+    for (let i = 0; i < n; i++) {
+        const d = mk(image.create(2, 2), SpriteKind.UI)
+        d.image.fill(randint(1, 14))
+        d.setPosition(x + randint(-spread, spread), y)
+        d.vx = randint(-40, 40)
+        d.vy = randint(-70, 10)
+        d.ay = 120
+        d.lifespan = ms
+        d.z = 99
+    }
+}
+function burst(s: Sprite, ms: number) {
+    fx(s.x, s.y, 6, 12, ms)
+}
+function confetti(ms: number) {
+    fx(80, 10, 80, 40, ms)
 }
 function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t
@@ -550,11 +432,23 @@ function bounceEase(x: number): number {
     return n1 * x * x + 0.984375
 }
 
-function sfxGoal() { music.powerUp.play() }
-function sfxKick() { music.thump.play() }
-function sfxFail() { music.powerDown.play() }
+// a quick sweep from f0 to f1 played in the background
+function snd(f0: number, f1: number, ms: number) {
+    control.runInParallel(() => {
+        for (let i = 0; i < 4; i++) music.playTone(f0 + (f1 - f0) * i / 3, ms / 4)
+    })
+}
+// true on even animation frames: flips every n ticks
+function anim(t: number, n: number): boolean { return Math.idiv(t, n) % 2 == 0 }
+function sfxGoal() { snd(400, 1600, 500) }
+function sfxKick() { snd(180, 60, 120) }
+function sfxFail() { snd(1000, 150, 600) }
 function sfxBeep() { music.playTone(988, 40) }
-function sfxWhistle() { music.baDing.play() }
+function sfxWhistle() { snd(1500, 1500, 250) }
+function sfxJump() { snd(300, 1000, 150) }
+function sfxHit() { snd(1200, 150, 300) }
+function sfxKnock() { snd(250, 120, 60) }
+function sfxSiren() { snd(700, 1100, 1500) }
 
 // top bar: stage name on the right (Hebrew side), counters on the left
 function hud(stageName: string, info: string): Image {
@@ -646,8 +540,8 @@ function welcome() {
     sub.setFlag(SpriteFlag.Invisible, true)
     const pressA = uiSprite(textImg("לחץ A כדי לשחק", 5, 15), 80, 113)
 
-    const runner = ghost(sprites.create(PLAYER_A, SpriteKind.Player))
-    const ball = ghost(sprites.create(BALL_IMG, SpriteKind.Ball))
+    const runner = mk(PLAYER_A, SpriteKind.Player)
+    const ball = mk(BALL_IMG, SpriteKind.Ball)
 
     clearKeys()
     let t = 0
@@ -671,7 +565,7 @@ function welcome() {
         if (c < 90) {
             runner.x = lerp(-10, 108, c / 90)
             runner.y = 96
-            runner.setImage(Math.idiv(c, 5) % 2 == 0 ? PLAYER_A : PLAYER_B)
+            runner.setImage(anim(c, 5) ? PLAYER_A : PLAYER_B)
             ball.x = runner.x + 9
             ball.y = 101 - Math.abs(Math.sin(c / 3)) * 3
             if (c == 89) sfxKick()
@@ -683,7 +577,7 @@ function welcome() {
         } else if (c == 112) {
             sfxGoal()
             scene.cameraShake(3, 300)
-            ball.startEffect(effects.confetti, 600)
+            burst(ball, 600)
             banner("גול!", 5, 78, 1400)
         } else if (c < 175) {
             // celebration jumps
@@ -694,7 +588,7 @@ function welcome() {
         }
         pause(20)
     }
-    music.baDing.play()
+    sfxWhistle()
 }
 
 // ---------------------------------------------------------------- player card (with Gal's photo)
@@ -715,8 +609,8 @@ function playerCard() {
     card.fill(12)
     card.drawRect(0, 0, 58, 104, 5)
     card.drawRect(1, 1, 56, 102, 14)
-    card.drawImage(PHOTO_CARD, 5, 5)
-    card.drawRect(4, 4, 50, 82, 15)
+    card.drawImage(unpack(PHOTO_CARD, 48), 5, 5)
+    card.drawRect(4, 4, 50, 76, 15)
     const name = textImg("גל להב", 15, 0)
     card.drawTransparentImage(name, Math.floor((58 - name.width) / 2), 89)
     // rating badge
@@ -729,7 +623,7 @@ function playerCard() {
         pause(20)
     }
     sfxWhistle()
-    cs.startEffect(effects.confetti, 500)
+    burst(cs, 500)
 
     const stats = ["מהירות 99", "בעיטה 98", "כדרור 99", "ראש 97", "כוח 99"]
     for (let i = 0; i < stats.length; i++) {
@@ -756,6 +650,11 @@ function playerCard() {
 
 // ---------------------------------------------------------------- stage screens
 
+// show the intro, play the stage, and on a fail show the intro again and retry
+function playStage(num: number, name: string, lines: string[], run: () => boolean) {
+    stageIntro(num, name, lines)
+    while (!run()) stageIntro(num, name, lines)
+}
 function stageIntro(num: number, name: string, lines: string[]) {
     clearAll()
     const bg = image.create(160, 120)
@@ -779,39 +678,11 @@ function stageIntro(num: number, name: string, lines: string[]) {
 
 // ---------------------------------------------------------------- the big moment: a still frame from Gal's videos
 
-const MOMENTS = [STILL_CATCH, STILL_SAVE, STILL_KICK, STILL_FLY]
-const MOMENT_CAPTIONS = ["תפיסה של אלופים!", "עצירה מטורפת!", "בעיטה ענקית!", "שוער מעופף!"]
-let nextMoment = 0
-
-function showMoment() {
-    clearAll()
-    const i = nextMoment % MOMENTS.length
-    nextMoment++
-    const bg = image.create(160, 120)
-    bg.fill(15)
-    drawCenter(bg, textImg("הרגע הגדול", 5, 0), 1)
-    drawCenter(bg, textImg(MOMENT_CAPTIONS[i], 1, 0), 108)
-    scene.setBackgroundImage(bg)
-    const pic = uiSprite(MOMENTS[i], 80, 60)
-    // zoom in like a camera flash
-    for (let k = 1; k <= 10; k++) {
-        pic.scale = 0.5 + k * 0.05
-        pause(20)
-    }
-    scene.cameraShake(2, 200)
-    cheerSound()
-    effects.confetti.startScreenEffect(2000)
-    pause(1200)
-    const pressA = uiSprite(textImg("לחץ A", 5, 15), 140, 108)
-    waitA()
-    effects.confetti.endScreenEffect()
-}
 
 // returns true when the stage was passed
 function stageResult(label: string, got: number, outOf: number, need: number): boolean {
     pause(400)
     const passed = got >= need
-    if (passed) showMoment()
     clearAll()
     const bg = image.create(160, 120)
     bg.fill(passed ? 8 : 14)
@@ -825,7 +696,7 @@ function stageResult(label: string, got: number, outOf: number, need: number): b
     }
     if (passed) {
         drawCenter(bg, bigTextImg("עברת!", 5, 15), 84)
-        effects.confetti.startScreenEffect(1500)
+        confetti(1500)
         sfxGoal()
     } else {
         printCenter(bg, "צריך " + need + " כדי לעבור", 82, 1)
@@ -833,10 +704,7 @@ function stageResult(label: string, got: number, outOf: number, need: number): b
         sfxFail()
     }
     printCenter(bg, "לחץ A", 107, 1)
-    scene.setBackgroundImage(bg)
-    pause(600)
-    waitA()
-    effects.confetti.endScreenEffect()
+    showAndWait(bg)
     return passed
 }
 
@@ -875,45 +743,60 @@ function powerBarImg(p: number): Image {
     return im
 }
 
-function stagePenalties(): number {
+// Penalties (Gal) and free kicks (Yiftach) share this stage.
+// Penalty: the aim sweeps by itself, up/down = height. Free kick: aim with all arrows, beat the wall.
+function stageShootout(fk: boolean): number {
     clearAll()
     scene.setBackgroundImage(penaltyBg())
-    const SHOTS = 3
-    const keeper = ghost(sprites.create(KEEPER_IMG, SpriteKind.Keeper))
-    const kicker = ghost(sprites.create(PLAYER_BACK, SpriteKind.Player))
-    const ball = ghost(sprites.create(BALL_IMG, SpriteKind.Ball))
+    const keeper = mk(KEEPER_IMG, SpriteKind.Keeper)
+    const gal = currentGame == 2
+    const kicker = mk(gal ? PLAYER_BACK : YIF_BACK, SpriteKind.Player)
+    const ball = mk(BALL_IMG, SpriteKind.Ball)
+    const wall: Sprite[] = []
+    if (fk) for (let i = 0; i < 3; i++) wall.push(mk(gal ? ENEMY_A : OPP_A, SpriteKind.Enemy))
     const aim = uiSprite(AIM_IMG, 80, 28)
     const bar = uiSprite(powerBarImg(0), 151, 80)
     const top = uiSprite(hud("", ""), 80, 5)
     const tip = uiSprite(textImg(" ", 1, 15), 80, 112)
+    const title = fk ? "חופשית" : "פנדלים"
+    const by = fk ? 88 : 86
     ball.z = 20
+    aim.z = 60
     let goals = 0
 
-    for (let shot = 1; shot <= SHOTS; shot++) {
-        top.setImage(hud("פנדלים", "בעיטה " + shot + "/" + SHOTS + "  גולים " + goals))
+    for (let shot = 1; shot <= 3; shot++) {
+        top.setImage(hud(title, "בעיטה " + shot + "/3  גולים " + goals))
+        const bx = fk ? randint(56, 104) : 80
+        const wallX = Math.round(lerp(bx, 80, 0.45)) + randint(-6, 6)
+        for (let i = 0; i < wall.length; i++) wall[i].setPosition(wallX - 11 + i * 11, 62)
         keeper.setImage(KEEPER_IMG)
         keeper.setPosition(80, 32)
-        kicker.setPosition(80, 104)
-        ball.setPosition(80, 86)
+        kicker.setPosition(bx, 104)
+        ball.setPosition(bx, by)
         aim.setFlag(SpriteFlag.Invisible, false)
         bar.setImage(powerBarImg(0))
 
         // --- aim
-        tip.setImage(textImg("חצים = גובה  A = כיוון", 1, 15))
+        setImageCentered(tip, textImg(fk ? "חצים = לכוון  A = מוכן" : "חצים = גובה  A = כיוון", 1, 15))
         clearKeys()
         let ax = 80
-        let ay = 28
+        let ay = fk ? 30 : 28
         let dir = randint(0, 1) == 0 ? -1 : 1
-        const speed = 1.4 + shot * 0.3
         let t = 0
         while (!popA()) {
             t++
-            ax += dir * speed
-            if (ax > 114) { ax = 114; dir = -1 }
-            if (ax < 46) { ax = 46; dir = 1 }
-            // up / down arrows: aim high into the top corner or low along the grass
-            if (controller.up.isPressed()) ay = Math.max(19, ay - 1)
-            if (controller.down.isPressed()) ay = Math.min(40, ay + 1)
+            if (fk) {
+                if (controller.left.isPressed()) ax -= 0.8
+                if (controller.right.isPressed()) ax += 0.8
+            } else {
+                ax += dir * (1.4 + shot * 0.3)
+                if (ax >= 114) dir = -1
+                if (ax <= 46) dir = 1
+            }
+            ax = Math.max(44, Math.min(116, ax))
+            if (controller.up.isPressed()) ay -= fk ? 0.6 : 0.9
+            if (controller.down.isPressed()) ay += fk ? 0.6 : 0.9
+            ay = Math.max(18, Math.min(40, ay))
             aim.setPosition(ax, ay)
             keeper.x = 80 + Math.sin(t / 9) * 5
             pause(16)
@@ -921,7 +804,7 @@ function stagePenalties(): number {
         sfxBeep()
 
         // --- power
-        tip.setImage(textImg("A = כוח", 1, 15))
+        setImageCentered(tip, textImg("A = כוח", 1, 15))
         let p = 0
         let pd = 1
         while (!popA()) {
@@ -933,64 +816,132 @@ function stagePenalties(): number {
             keeper.x = 80 + Math.sin(t / 9) * 5
             pause(16)
         }
-        tip.setImage(textImg(" ", 1, 15))
+        setImageCentered(tip, textImg(" ", 1, 15))
         aim.setFlag(SpriteFlag.Invisible, true)
-
-        // --- run up & kick
-        for (let i = 0; i < 10; i++) {
-            kicker.y -= 1
-            pause(20)
-        }
+        for (let i = 0; i < 9; i++) { kicker.y -= 1; pause(20) }
         sfxKick()
+
+        // --- the shot; the keeper picks a side
         const over = p > 88
-        const tx = ax + randint(-2, 2)
+        const high = ay < 25
+        const tx = ax
         const ty = over ? -6 : ay
-        // keeper picks a side
         const diveDir = randint(-1, 1)
         const kx0 = keeper.x
         const kTarget = 80 + diveDir * 24
         if (diveDir < 0) keeper.setImage(KEEPER_DIVE)
         else if (diveDir > 0) keeper.setImage(KEEPER_DIVE_R)
-        const frames = Math.max(12, Math.round(32 - p / 5))
+        for (const w of wall) w.y = 58     // the wall jumps
+        const frames = Math.max(13, Math.round(33 - p / 5))
+        const reach = (diveDir == 0 ? 11 : 14) - p / 20 - (high && diveDir != 0 ? 3 : 0)
+        const scores = !over && Math.abs(tx - kTarget) >= reach
+        let blocked = false
         for (let i = 1; i <= frames; i++) {
             const f = i / frames
-            ball.x = lerp(80, tx, f)
-            ball.y = lerp(86, ty, f) - Math.sin(f * Math.PI) * 6
+            const prevY = ball.y
+            ball.x = lerp(bx, tx, f)
+            ball.y = lerp(by, ty, f) - Math.sin(f * Math.PI) * (fk && high ? 16 : 6)
+            if (fk && !over && !high && prevY > 62 && ball.y <= 62 && Math.abs(ball.x - wallX) < 17) {
+                blocked = true
+                break
+            }
             const kf = Math.min(1, f * 1.5)
             keeper.x = lerp(kx0, kTarget, kf)
             if (diveDir != 0) keeper.y = 32 - Math.sin(kf * Math.PI) * 4
             pause(16)
         }
+        for (const w of wall) w.y = 62
 
         // --- result: shots high in the corner are harder for the keeper to reach
-        const high = ay < 25
-        const reach = (diveDir == 0 ? 11 : 14) - p / 20 - (high && diveDir != 0 ? 3 : 0)
-        if (over) {
-            banner("מעל!", 2, 64, 1200)
-            sfxFail()
-        } else if (Math.abs(tx - kTarget) < reach) {
-            banner("השוער עצר!", 2, 64, 1200)
-            sfxFail()
-            // ball bounces back out
-            const bx = randint(30, 130)
+        if (blocked) {
+            failBanner("החומה עצרה!")
+            for (let i = 1; i <= 15; i++) { ball.y += 2; ball.x += randint(-2, 2); pause(16) }
+        } else if (over) {
+            failBanner("מעל!")
+        } else if (!scores) {
+            failBanner("השוער עצר!")
+            const rx = randint(30, 130)
             for (let i = 1; i <= 20; i++) {
-                ball.x = lerp(tx, bx, i / 20)
+                ball.x = lerp(tx, rx, i / 20)
                 ball.y = lerp(ay, 70, i / 20)
                 pause(16)
             }
         } else {
             goals++
-            totalScore += 100
-            banner("גול!", 5, 64, 1200)
-            sfxGoal()
-            scene.cameraShake(3, 300)
-            ball.startEffect(effects.confetti, 700)
-            ball.y = ay - 4
+            goalFx(ball)
         }
-        top.setImage(hud("פנדלים", "בעיטה " + shot + "/" + SHOTS + "  גולים " + goals))
+        top.setImage(hud(title, "בעיטה " + shot + "/3  גולים " + goals))
         pause(1500)
     }
     return goals
+}
+function failBanner(s: string) {
+    banner(s, 2, 64, 1200)
+    sfxFail()
+}
+// ---------------------------------------------------------------- CROSSBAR: hit the bar (or a post) 2 times in a row
+// The aim swings across the woodwork; A when it is right on it.
+function stageBar(): number {
+    clearAll()
+    scene.setBackgroundImage(penaltyBg())
+    const kicker = mk(PLAYER_BACK, SpriteKind.Player)
+    const ball = mk(BALL_IMG, SpriteKind.Ball)
+    ball.z = 20
+    const aim = uiSprite(AIM_IMG, 80, 13)
+    aim.z = 60
+    const aimOn = recolor(AIM_IMG, 2, 7)                             // green = right on the woodwork
+    const top = uiSprite(hud("משקוף", ""), 80, 5)
+    let streak = 0
+    for (let shot = 1; shot <= 8 && streak < 2; shot++) {
+        top.setImage(hud("משקוף", "ברצף " + streak + "/2  נשארו " + (9 - shot)))
+        const post = randint(0, 2) == 0
+        const px = randint(0, 1) == 0 ? 39 : 120
+        const bx = randint(50, 110)
+        kicker.setPosition(80, 104)
+        ball.setPosition(80, 86)
+        aim.setFlag(SpriteFlag.Invisible, false)
+        let a = 0
+        let t = randint(0, 50)
+        clearKeys()
+        while (!popA()) {
+            t++
+            a = Math.sin(t * (0.055 + streak * 0.01)) * 11          // distance from the woodwork
+            if (post) aim.setPosition(px + a, 30)
+            else aim.setPosition(bx, 13 + a)
+            aim.setImage(Math.abs(a) < 3 ? aimOn : AIM_IMG)
+            pause(16)
+        }
+        aim.setFlag(SpriteFlag.Invisible, true)
+        for (let i = 0; i < 9; i++) { kicker.y -= 1; pause(20) }
+        sfxKick()
+        for (let i = 1; i <= 16; i++) {
+            ball.x = lerp(80, aim.x, i / 16)
+            ball.y = lerp(86, aim.y, i / 16) - Math.sin(i / 16 * Math.PI) * 8
+            pause(16)
+        }
+        if (Math.abs(a) < 3) {
+            streak++
+            snd(1900, 1700, 400)                                   // DING!
+            banner("דינג!", 5, 64, 1000)
+            scene.cameraShake(2, 200)
+            burst(ball, 500)
+            for (let i = 1; i <= 16; i++) { ball.y += 3; ball.x += post ? (px < 80 ? 2 : -2) : 0; pause(16) }
+        } else {
+            streak = 0
+            failBanner(post ? "פספסת!" : (a < 0 ? "מעל!" : "גול... אבל לא משקוף!"))
+        }
+        top.setImage(hud("משקוף", "ברצף " + streak + "/2  נשארו " + (8 - shot)))
+        pause(1300)
+    }
+    return streak
+}
+
+function goalFx(ball: Sprite) {
+    totalScore += 100
+    banner("גול!", 5, 64, 1200)
+    sfxGoal()
+    scene.cameraShake(3, 300)
+    burst(ball, 700)
 }
 
 // ---------------------------------------------------------------- STAGE 2: skills
@@ -1045,12 +996,89 @@ function skillsBg(): Image {
     return bg
 }
 
+// show the combo panel and wait for the keys; true = done in time without a mistake
+function runCombo(sk: Skill, panel: Sprite, me: Sprite, Y: number): boolean {
+    panel.setFlag(SpriteFlag.Invisible, false)
+    clearKeys()
+    let done = 0
+    let failed = false
+    const start = game.runtime()
+    while (done < sk.combo.length && !failed) {
+        const frac = 1 - (game.runtime() - start) / sk.ms
+        if (frac <= 0) { failed = true; break }
+        const k = popKey()
+        if (k != null) {
+            if (k == sk.combo[done]) {
+                done++
+                music.playTone(523 + done * 120, 60)
+                me.y = Y + (done % 2 == 0 ? -3 : 3)
+            } else {
+                failed = true
+            }
+        }
+        panel.setImage(comboPanel(sk, done, failed, Math.max(0, frac)))
+        pause(16)
+    }
+    panel.setImage(comboPanel(sk, done, failed, 0))
+    me.y = Y
+    return !failed
+}
+
+// Things slide along a rail past a gold frame; press A when the right one is in the frame.
+// Used for Yiftach's shirts and Alona's transition spot.
+function railBg(wall: number, floor: number): Image {
+    const bg = image.create(160, 120)
+    bg.fill(wall)
+    bg.fillRect(0, 70, 160, 50, floor)
+    bg.fillRect(0, 30, 160, 2, 1)                 // the rail
+    bg.drawRect(66, 28, 28, 28, 5)                // gold frame
+    bg.drawRect(67, 29, 26, 26, 5)
+    return bg
+}
+function railPick(imgs: Image[], target: number, speed: number, me: Sprite, a: Image, b: Image, okText: string, failText: string): boolean {
+    const items: Sprite[] = []
+    for (let i = 0; i < imgs.length; i++) {
+        const sp = mk(imgs[i], SpriteKind.Food)
+        sp.setPosition(180 + i * 30, 42)
+        items.push(sp)
+    }
+    clearKeys()
+    let result = 0       // 1 = right one, -1 = wrong one / missed it
+    let t = 0
+    while (result == 0) {
+        t++
+        for (const sp of items) sp.x -= speed
+        me.setImage(anim(t, 5) ? a : b)
+        if (popA()) {
+            result = -1
+            for (let i = 0; i < items.length; i++) {
+                if (Math.abs(items[i].x - 80) < 8) result = i == target ? 1 : -1
+            }
+        }
+        if (items[target].x < 66) result = -1
+        pause(16)
+    }
+    me.setImage(a)
+    if (result > 0) {
+        totalScore += 100
+        burst(items[target], 600)
+        banner(okText, 5, 64, 1200)
+        sfxGoal()
+    } else {
+        burst(items[target], 800)
+        failBanner(failText)
+    }
+    pause(1500)
+    for (const sp of items) sp.destroy()
+    return result > 0
+}
+
 function stageSkills(): number {
     clearAll()
     scene.setBackgroundImage(skillsBg())
-    const me = ghost(sprites.create(PLAYER_A, SpriteKind.Player))
-    const ball = ghost(sprites.create(BALL_IMG, SpriteKind.Ball))
-    const def = ghost(sprites.create(ENEMY_A, SpriteKind.Enemy))
+    const me = mk(PLAYER_A, SpriteKind.Player)
+    const ball = mk(BALL_IMG, SpriteKind.Ball)
+    const def = mk(ENEMY_A, SpriteKind.Enemy)
     const top = uiSprite(hud("", ""), 80, 5)
     const panel = uiSprite(image.create(160, 34), 80, 28)
     ball.z = 20
@@ -1073,8 +1101,8 @@ function stageSkills(): number {
             t++
             me.x += 1
             def.x -= 1.4
-            me.setImage(Math.idiv(t, 5) % 2 == 0 ? PLAYER_A : PLAYER_B)
-            def.setImage(Math.idiv(t, 5) % 2 == 0 ? ENEMY_A : ENEMY_B)
+            me.setImage(anim(t, 5) ? PLAYER_A : PLAYER_B)
+            def.setImage(anim(t, 5) ? ENEMY_A : ENEMY_B)
             ball.x = me.x + 9 + Math.sin(t / 4) * 2
             ball.y = Y + 5
             pause(16)
@@ -1083,42 +1111,18 @@ function stageSkills(): number {
         def.setImage(ENEMY_A)
 
         // --- combo time!
-        panel.setFlag(SpriteFlag.Invisible, false)
-        clearKeys()
-        let done = 0
-        let failed = false
-        const start = game.runtime()
-        while (done < sk.combo.length && !failed) {
-            const frac = 1 - (game.runtime() - start) / sk.ms
-            if (frac <= 0) { failed = true; break }
-            const k = popKey()
-            if (k != null) {
-                if (k == sk.combo[done]) {
-                    done++
-                    music.playTone(523 + done * 120, 60)
-                    me.y = Y + (done % 2 == 0 ? -3 : 3)
-                } else {
-                    failed = true
-                }
-            }
-            panel.setImage(comboPanel(sk, done, failed, Math.max(0, frac)))
-            pause(16)
-        }
-        panel.setImage(comboPanel(sk, done, failed, 0))
-        me.y = Y
-
-        if (!failed) {
+        if (runCombo(sk, panel, me, Y)) {
             wins++
             totalScore += 100
             sfxGoal()
             banner(sk.name + "!", 5, 64, 1500)
             doSkillAnim(sk.anim, me, ball, def, Y)
             def.setImage(FALLEN_ENEMY)
-            def.startEffect(effects.halo, 1200)
+            burst(def, 1200)
             // run off with the ball
             for (let i = 0; i < 50; i++) {
                 me.x += 2
-                me.setImage(Math.idiv(i, 4) % 2 == 0 ? PLAYER_A : PLAYER_B)
+                me.setImage(anim(i, 4) ? PLAYER_A : PLAYER_B)
                 ball.x = me.x + 9
                 ball.y = Y + 5
                 pause(16)
@@ -1130,7 +1134,7 @@ function stageSkills(): number {
             for (let i = 0; i < 70; i++) {
                 if (def.x > ball.x + 6) def.x -= 2
                 else { def.x -= 2; ball.x = def.x - 8 }
-                def.setImage(Math.idiv(i, 4) % 2 == 0 ? ENEMY_A : ENEMY_B)
+                def.setImage(anim(i, 4) ? ENEMY_A : ENEMY_B)
                 pause(16)
             }
         }
@@ -1148,7 +1152,7 @@ function doSkillAnim(kind: number, me: Sprite, ball: Sprite, def: Sprite, Y: num
     const defFlip = flipped(ENEMY_A)
     for (let i = 1; i <= N; i++) {
         const f = i / N
-        me.setImage(Math.idiv(i, 4) % 2 == 0 ? PLAYER_A : PLAYER_B)
+        me.setImage(anim(i, 4) ? PLAYER_A : PLAYER_B)
         if (kind == 0) {
             // step over: quick zig-zag then burst past
             me.x = lerp(sx, ex, f)
@@ -1212,9 +1216,9 @@ function stageTackle(): number {
     clearAll()
     scene.setBackgroundImage(tackleBg())
     const ROUNDS = 3
-    const me = ghost(sprites.create(PLAYER_A, SpriteKind.Player))
-    const att = ghost(sprites.create(ENEMY_A, SpriteKind.Enemy))
-    const ball = ghost(sprites.create(BALL_IMG, SpriteKind.Ball))
+    const me = mk(PLAYER_A, SpriteKind.Player)
+    const att = mk(ENEMY_A, SpriteKind.Enemy)
+    const ball = mk(BALL_IMG, SpriteKind.Ball)
     const ring = uiSprite(reachRing(1), 0, 0)
     ring.z = 1
     const top = uiSprite(hud("", ""), 80, 5)
@@ -1226,7 +1230,7 @@ function stageTackle(): number {
 
     for (let r = 0; r < ROUNDS; r++) {
         top.setImage(hud("תיקולים", "התקפה " + (r + 1) + "/" + ROUNDS + "  ניצחת " + wins))
-        tip.setImage(textImg("תקל כשהטבעת זוהרת!", 1, 15))
+        setImageCentered(tip, textImg("תקל כשהטבעת זוהרת!", 1, 15))
         me.setImage(PLAYER_A)
         me.setPosition(44, 70)
         controller.moveSprite(me, 70, 80)
@@ -1251,7 +1255,7 @@ function stageTackle(): number {
             att.y += Math.sign(targetY - att.y) * 0.4
             // feint: in the last round he sometimes stops for a moment
             if (r == 2 && t % 100 > 85) att.x += speed
-            att.setImage(Math.idiv(t, 6) % 2 == 0 ? ENEMY_A : ENEMY_B)
+            att.setImage(anim(t, 6) ? ENEMY_A : ENEMY_B)
 
             // the ball: close to his feet, then a "heavy touch" pushes it out in front
             const ph = (t % period) / period
@@ -1273,7 +1277,7 @@ function stageTackle(): number {
                     me.setImage(PLAYER_A)
                     controller.moveSprite(me, 70, 80)
                     ring.setFlag(SpriteFlag.Invisible, false)
-                    tip.setImage(textImg("קום! נסה שוב", 1, 15))
+                    setImageCentered(tip, textImg("קום! נסה שוב", 1, 15))
                     clearKeys()
                 }
             } else if (popA()) {
@@ -1286,7 +1290,7 @@ function stageTackle(): number {
                 getUp = 35
                 ring.setFlag(SpriteFlag.Invisible, true)
                 for (let i = 0; i < 8; i++) { me.x += 2; pause(16) }
-                tip.setImage(textImg("החטאת!", 2, 15))
+                setImageCentered(tip, textImg("החטאת!", 2, 15))
             }
             if (att.x < 4) break
             pause(16)
@@ -1308,7 +1312,7 @@ function stageTackle(): number {
                 pause(16)
             }
             att.setImage(FALLEN_ENEMY)
-            att.startEffect(effects.halo, 1000)
+            burst(att, 1000)
         } else {
             sfxFail()
             banner("הוא עבר!", 2, 60, 1500)
@@ -1365,12 +1369,23 @@ function kickOf(src: Image): Image {
     return im
 }
 
-const ME_A = pad16(PLAYER_A)
-const ME_B = pad16(PLAYER_B)
-const ME_PUNCH_R = punchOf(PLAYER_A)
-const ME_PUNCH_L = flipped(ME_PUNCH_R)
-const ME_KICK_R = kickOf(PLAYER_A)
-const ME_KICK_L = flipped(ME_KICK_R)
+// the fighter's look - Gal by default, Yiftach's game swaps it with setFightHero()
+let ME_A = pad16(PLAYER_A)
+let ME_B = pad16(PLAYER_B)
+let ME_PUNCH_R = punchOf(PLAYER_A)
+let ME_PUNCH_L = flipped(ME_PUNCH_R)
+let ME_KICK_R = kickOf(PLAYER_A)
+let ME_KICK_L = flipped(ME_KICK_R)
+let ME_DOWN = SLIDE_IMG
+function setFightHero(a: Image, b: Image, down: Image) {
+    ME_A = pad16(a)
+    ME_B = pad16(b)
+    ME_PUNCH_R = punchOf(a)
+    ME_PUNCH_L = flipped(ME_PUNCH_R)
+    ME_KICK_R = kickOf(a)
+    ME_KICK_L = flipped(ME_KICK_R)
+    ME_DOWN = down
+}
 
 class Foe {
     sp: Sprite
@@ -1403,7 +1418,7 @@ class Foe {
         this.show = 0
         this.thrower = false
         this.throwT = 0
-        this.sp = ghost(sprites.create(this.a, SpriteKind.Enemy))
+        this.sp = mk(this.a, SpriteKind.Enemy)
         this.sp.setPosition(x, y)
     }
 }
@@ -1448,7 +1463,7 @@ function fightHud(roundLabel: Image, hp: number, foes: Foe[]): Image {
 function fightRound(r: number): boolean {
     clearAll()
     scene.setBackgroundImage(fightBg())
-    const me = ghost(sprites.create(ME_A, SpriteKind.Player))
+    const me = mk(ME_A, SpriteKind.Player)
     me.setPosition(30, 75)
     me.z = 10
     const foes: Foe[] = []
@@ -1464,6 +1479,12 @@ function fightRound(r: number): boolean {
         for (let i = 0; i < 3; i++) {
             foes.push(new Foe(subA, subB, subF, 2, 0.45 + i * 0.08, 55 + i * 25, 20))
         }
+    } else if (r == 3) {
+        // the whole team (Yiftach's yellow team)! they come running in one after the other
+        title = "כל היריבים!"
+        for (let i = 0; i < 6; i++) {
+            foes.push(new Foe(OPP_A, OPP_B, OPP_DOWN, 2, 0.5 + (i % 3) * 0.1, 150 + i * 40, randint(45, 105)))
+        }
     } else {
         title = "נגד השופט"
         const refA = recolor(teamLook(PLAYER_A, 15), 1, 15)
@@ -1474,7 +1495,7 @@ function fightRound(r: number): boolean {
         foes.push(ref)
     }
 
-    const roundLabel = textImg("סיבוב " + (r + 1), 5, 0)
+    const roundLabel = textImg(r == 3 ? "קבוצה" : "סיבוב " + (r + 1), 5, 0)
     const top = uiSprite(fightHud(roundLabel, 5, foes), 80, 5)
     banner(title, 5, 60, 1300)
     sfxWhistle()
@@ -1522,12 +1543,12 @@ function fightRound(r: number): boolean {
                         f.windup = 0
                         f.sp.x += facing * (kick ? 18 : 10)
                         powWord((me.x + f.sp.x) / 2, f.sp.y - 10)
-                        music.knock.play()
+                        sfxKnock()
                         scene.cameraShake(kick ? 4 : 2, 150)
                         if (f.hp <= 0) {
                             f.sp.setImage(f.fallen)
-                            f.sp.startEffect(effects.halo, 2000)
-                            music.wawawawaa.play()
+                            burst(f.sp, 2000)
+                            sfxFail()
                         }
                     }
                 }
@@ -1538,7 +1559,7 @@ function fightRound(r: number): boolean {
             atk--
         } else {
             const moving = controller.dx() != 0 || controller.dy() != 0
-            me.setImage(moving && Math.idiv(t, 5) % 2 == 0 ? ME_B : ME_A)
+            me.setImage(moving && anim(t, 5) ? ME_B : ME_A)
         }
         if (atkCool > 0) atkCool--
         if (inv > 0) {
@@ -1565,7 +1586,7 @@ function fightRound(r: number): boolean {
                         hp--
                         inv = 60
                         me.x += dir * 14
-                        music.zapped.play()
+                        sfxHit()
                         scene.cameraShake(3, 200)
                     }
                 }
@@ -1581,20 +1602,20 @@ function fightRound(r: number): boolean {
             const ty = me.y
             if (Math.abs(tx - f.sp.x) > 1) f.sp.x += Math.sign(tx - f.sp.x) * f.speed
             if (Math.abs(ty - f.sp.y) > 1) f.sp.y += Math.sign(ty - f.sp.y) * f.speed * 0.8
-            f.sp.setImage(Math.idiv(t, 7) % 2 == 0 ? f.a : f.b)
+            f.sp.setImage(anim(t, 7) ? f.a : f.b)
             if (Math.abs(dx) < 22 && Math.abs(dy) < 10 && f.cool == 0) f.windup = 32
             // the referee throws cards at you!
             if (f.thrower) {
                 f.throwT++
                 if (f.throwT > 110) {
                     f.throwT = 0
-                    const c = ghost(sprites.create(randint(0, 2) == 0 ? CARD_RED : CARD_YELLOW, SpriteKind.Projectile))
+                    const c = mk(randint(0, 2) == 0 ? CARD_RED : CARD_YELLOW, SpriteKind.Projectile)
                     c.setPosition(f.sp.x, f.sp.y - 4)
                     const d = Math.max(1, Math.sqrt(dx * dx + dy * dy))
                     c.vx = dx / d * 55
                     c.vy = dy / d * 55
                     cards.push(c)
-                    music.pewPew.play()
+                    snd(1600, 400, 120)
                 }
             }
         }
@@ -1606,7 +1627,7 @@ function fightRound(r: number): boolean {
             if (hit && inv == 0) {
                 hp--
                 inv = 60
-                music.zapped.play()
+                sfxHit()
                 scene.cameraShake(2, 150)
             }
             if (hit || c.x < -10 || c.x > 170 || c.y < -10 || c.y > 130) {
@@ -1629,20 +1650,19 @@ function fightRound(r: number): boolean {
         me.setImage(ME_A)
         banner("נוקאאוט!", 5, 60, 1800)
         sfxGoal()
-        effects.confetti.startScreenEffect(1500)
+        confetti(1500)
         for (let i = 0; i < 40; i++) {
             me.y += (Math.idiv(i, 10) % 2 == 0) ? -1 : 1
             pause(20)
         }
     } else {
-        me.setImage(SLIDE_IMG)
-        me.startEffect(effects.halo, 1500)
+        me.setImage(ME_DOWN)
+        burst(me, 1500)
         banner("הפסדת!", 2, 60, 1800)
         sfxFail()
         pause(800)
     }
     pause(1000)
-    effects.confetti.endScreenEffect()
     return won
 }
 
@@ -1667,9 +1687,8 @@ const FIELD_L = 72
 const FIELD_R = 248
 const FIELD_T = 60
 const FIELD_B = 180
-const EXIT_HALF = 6
 // small exits: [side, position]  side 0 = top, 1 = right, 2 = bottom, 3 = left
-const EXITS = [[0, 52], [1, 200], [2, 270], [3, 40]]
+const EXITS = [[52, 3], [317, 200], [270, 237], [3, 40]]
 const FAN_COLORS = [2, 5, 1, 8, 4, 9, 13, 7]
 
 function makeCop(src: Image): Image {
@@ -1751,11 +1770,11 @@ function stadiumWorld(): Image {
     // small yellow exits in the outer wall, each with a sign
     const sign = textImg("יציאה", 15, 0)
     for (const e of EXITS) {
-        const p = e[1]
-        if (e[0] == 0) { bg.fillRect(p - EXIT_HALF, 0, EXIT_HALF * 2, WALL, 5); bg.fillRect(p - 17, WALL + 2, 34, 12, 5); bg.drawTransparentImage(sign, p - 15, WALL + 2) }
-        if (e[0] == 2) { bg.fillRect(p - EXIT_HALF, WORLD_H - WALL, EXIT_HALF * 2, WALL, 5); bg.fillRect(p - 17, WORLD_H - WALL - 14, 34, 12, 5); bg.drawTransparentImage(sign, p - 15, WORLD_H - WALL - 14) }
-        if (e[0] == 3) { bg.fillRect(0, p - EXIT_HALF, WALL, EXIT_HALF * 2, 5); bg.fillRect(WALL + 2, p + 8, 34, 12, 5); bg.drawTransparentImage(sign, WALL + 4, p + 8) }
-        if (e[0] == 1) { bg.fillRect(WORLD_W - WALL, p - EXIT_HALF, WALL, EXIT_HALF * 2, 5); bg.fillRect(WORLD_W - WALL - 36, p + 8, 34, 12, 5); bg.drawTransparentImage(sign, WORLD_W - WALL - 34, p + 8) }
+        bg.fillRect(e[0] - 6, e[1] - 6, 12, 12, 5)
+        const sx = Math.max(10, Math.min(WORLD_W - 40, e[0] - 15))
+        const sy = Math.max(8, Math.min(WORLD_H - 20, e[1] + 8))
+        bg.fillRect(sx - 2, sy, 34, 12, 5)
+        bg.drawTransparentImage(sign, sx, sy)
     }
     return bg
 }
@@ -1766,13 +1785,7 @@ function miniMapBase(): Image {
     m.fill(15)
     m.fillRect(1, 1, 40, 30, 10)
     m.fillRect(1 + FIELD_L / 8, 1 + FIELD_T / 8, (FIELD_R - FIELD_L) / 8, (FIELD_B - FIELD_T) / 8, 7)
-    for (const e of EXITS) {
-        const p = Math.idiv(e[1], 8) + 1
-        if (e[0] == 0) m.fillRect(p - 1, 0, 3, 2, 5)
-        if (e[0] == 2) m.fillRect(p - 1, 30, 3, 2, 5)
-        if (e[0] == 3) m.fillRect(0, p - 1, 2, 3, 5)
-        if (e[0] == 1) m.fillRect(40, p - 1, 2, 3, 5)
-    }
+    for (const e of EXITS) m.fillRect(e[0] / 8, e[1] / 8, 3, 3, 5)
     return m
 }
 
@@ -1786,8 +1799,7 @@ function escapeHud(lives: number): Image {
 }
 
 function cheerSound() {
-    music.play(music.createSoundEffect(WaveShape.Noise, 1200, 600, 180, 0, 2500,
-        SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
+    snd(1200, 600, 1500)
 }
 
 // walk a sprite towards (tx, ty)
@@ -1822,10 +1834,10 @@ function stageEscape(): boolean {
     clearAll()
     scene.setBackgroundColor(15)
     scene.setBackgroundImage(image.create(1, 1))
-    const world = ghost(sprites.create(stadiumWorld(), SpriteKind.UI))
+    const world = mk(stadiumWorld(), SpriteKind.UI)
     world.setPosition(WORLD_W / 2, WORLD_H / 2)
     world.z = -100
-    const me = ghost(sprites.create(PLAYER_A, SpriteKind.Player))
+    const me = mk(PLAYER_A, SpriteKind.Player)
     me.z = 20
     const MIDX = (FIELD_L + FIELD_R) / 2
     const MIDY = (FIELD_T + FIELD_B) / 2
@@ -1833,13 +1845,13 @@ function stageEscape(): boolean {
     const cops: Sprite[] = []
     const copStun: number[] = []
     for (let i = 0; i < 4; i++) {
-        cops.push(ghost(sprites.create(COP_A, SpriteKind.Enemy)))
+        cops.push(mk(COP_A, SpriteKind.Enemy))
         copStun.push(0)
     }
     const guards: Sprite[] = []
     const guardP: number[] = [0, 300, 600]
     for (let i = 0; i < guardP.length; i++) {
-        const g = ghost(sprites.create(COP_A, SpriteKind.Enemy))
+        const g = mk(COP_A, SpriteKind.Enemy)
         const p = guardPath(guardP[i])
         g.setPosition(p[0], p[1])
         guards.push(g)
@@ -1848,7 +1860,7 @@ function stageEscape(): boolean {
     const fans: Sprite[] = []
     const fanT: number[][] = []
     for (let i = 0; i < 10; i++) {
-        const f = ghost(sprites.create(recolor(FAN_IMG, 2, FAN_COLORS[i % FAN_COLORS.length]), SpriteKind.Food))
+        const f = mk(recolor(FAN_IMG, 2, FAN_COLORS[i % FAN_COLORS.length]), SpriteKind.Food)
         f.setPosition(randint(20, WORLD_W - 20), i % 2 == 0 ? randint(15, 45) : randint(WORLD_H - 45, WORLD_H - 15))
         fans.push(f)
         fanT.push(randomFieldSpot())
@@ -1869,7 +1881,7 @@ function stageEscape(): boolean {
         }
     }
     resetPositions()
-    music.siren.loop()
+    sfxSiren()
     let t = 0
     let won = false
     let inv = 0
@@ -1880,21 +1892,19 @@ function stageEscape(): boolean {
         const sp = zoneSpeed(me.x, me.y, 90, 90, 60)
         controller.moveSprite(me, sp, sp)
         const moving = controller.dx() != 0 || controller.dy() != 0
-        me.setImage(moving && Math.idiv(t, 4) % 2 == 0 ? PLAYER_B : PLAYER_A)
+        me.setImage(moving && anim(t, 4) ? PLAYER_B : PLAYER_A)
 
         // the outer wall - you can only get out through the small exits
-        let minX = WALL + 5
-        let maxX = WORLD_W - WALL - 5
-        let minY = WALL + 7
-        let maxY = WORLD_H - WALL - 7
+        let free = false
         for (const e of EXITS) {
-            if (e[0] == 0 && Math.abs(me.x - e[1]) < EXIT_HALF) minY = -20
-            if (e[0] == 2 && Math.abs(me.x - e[1]) < EXIT_HALF) maxY = WORLD_H + 20
-            if (e[0] == 3 && Math.abs(me.y - e[1]) < EXIT_HALF) minX = -20
-            if (e[0] == 1 && Math.abs(me.y - e[1]) < EXIT_HALF) maxX = WORLD_W + 20
+            const dx = Math.abs(me.x - e[0])
+            const dy = Math.abs(me.y - e[1])
+            if (dx < 6 && dy < 20 || dx < 20 && dy < 6) free = true
         }
-        me.x = Math.max(minX, Math.min(maxX, me.x))
-        me.y = Math.max(minY, Math.min(maxY, me.y))
+        if (!free) {
+            me.x = Math.max(WALL + 5, Math.min(WORLD_W - WALL - 5, me.x))
+            me.y = Math.max(WALL + 7, Math.min(WORLD_H - WALL - 7, me.y))
+        }
         if (me.x < 0 || me.x > WORLD_W || me.y < 0 || me.y > WORLD_H) { won = true; break }
 
         // camera follows Gal
@@ -1908,7 +1918,7 @@ function stageEscape(): boolean {
                 continue
             }
             stepTo(c, me.x, me.y, zoneSpeed(c.x, c.y, 1.15, 1.0, 0.4))
-            c.setImage(Math.idiv(t + i * 2, 4) % 2 == 0 ? COP_A : COP_B)
+            c.setImage(anim(t + i * 2, 4) ? COP_A : COP_B)
         }
         // stadium guards walk around the stands, and come after you if you get close
         for (let i = 0; i < guards.length; i++) {
@@ -1922,7 +1932,7 @@ function stageEscape(): boolean {
                 const p = guardPath(guardP[i])
                 stepTo(g, p[0], p[1], 0.9)
             }
-            g.setImage(Math.idiv(t + 1, 5) % 2 == 0 ? COP_A : COP_B)
+            g.setImage(anim(t + 1, 5) ? COP_A : COP_B)
         }
         // fans run around the field and block the cops
         for (let i = 0; i < fans.length; i++) {
@@ -1932,8 +1942,8 @@ function stageEscape(): boolean {
             for (let j = 0; j < cops.length; j++) {
                 if (copStun[j] == 0 && Math.abs(f.x - cops[j].x) < 7 && Math.abs(f.y - cops[j].y) < 8) {
                     copStun[j] = 40
-                    cops[j].startEffect(effects.halo, 500)
-                    music.knock.play()
+                    burst(cops[j], 500)
+                    sfxKnock()
                 }
             }
         }
@@ -1958,7 +1968,7 @@ function stageEscape(): boolean {
             if (caught) {
                 lives--
                 top.setImage(escapeHud(lives))
-                music.zapped.play()
+                sfxHit()
                 scene.cameraShake(3, 250)
                 if (lives <= 0) break
                 banner("תפסו אותך!", 2, 60, 1000)
@@ -1969,7 +1979,6 @@ function stageEscape(): boolean {
         pause(16)
     }
 
-    music.stopAllSounds()
     controller.moveSprite(me, 0, 0)
     me.setFlag(SpriteFlag.Invisible, false)
     if (!won) {
@@ -1984,69 +1993,193 @@ function stageEscape(): boolean {
     cheerSound()
     sfxGoal()
     banner("ברחת!", 5, 60, 2500)
-    effects.confetti.startScreenEffect(2500)
+    fx(me.x, me.y - 50, 80, 40, 2500)
     for (let f = 0; f < 120; f++) {
         for (const fan of fans) fan.y += Math.sin((f + fan.x) / 3) * 1.5
         pause(20)
     }
-    effects.confetti.endScreenEffect()
-    showMoment()
     return true
 }
 
 // ---------------------------------------------------------------- final screen (Gal with the trophy!)
 
-function finale() {
+// photos are stored run-length packed (each byte = (run length - 1) * 16 + color), unpacked when shown
+function unpack(buf: Buffer, w: number): Image {
+    let n = 0
+    for (let i = 0; i < buf.length; i++) n += (buf[i] >> 4) + 1
+    const im = image.create(w, Math.idiv(n, w))
+    let p = 0
+    for (let i = 0; i < buf.length; i++) {
+        const c = buf[i] & 15
+        for (let k = buf[i] >> 4; k >= 0; k--) {
+            im.setPixel(p % w, Math.idiv(p, w), c)
+            p++
+        }
+    }
+    return im
+}
+
+// shared by all three champion screens: starry background + photo in a gold frame on the right
+function finaleBg(color: number, stars: number, photo: Image, py: number): Image {
     clearAll()
     const bg = image.create(160, 120)
-    bg.fill(8)
-    for (let i = 0; i < 40; i++) bg.setPixel(randint(0, 159), randint(0, 119), 1)
-    drawCenter(bg, hebrewTitleImg(5), 3)
-    // photo in a gold frame on the right
-    bg.fillRect(96, 28, 62, 90, 12)
-    bg.drawRect(96, 28, 62, 90, 5)
-    bg.drawImage(PHOTO_TROPHY, 99, 31)
-    // text on the left
-    const champ = bigTextImg("אלוף!", 5, 15)
-    bg.drawTransparentImage(champ, 48 - champ.width / 2, 36)
-    const sc = textImg("ניקוד " + totalScore, 1, 15)
-    bg.drawTransparentImage(sc, 48 - sc.width / 2, 70)
-    const again = textImg("A = שחק שוב", 9, 15)
-    bg.drawTransparentImage(again, 48 - again.width / 2, 100)
+    bg.fill(color)
+    for (let i = 0; i < 40; i++) bg.setPixel(randint(0, 159), randint(0, 119), stars)
+    bg.fillRect(100, py, 54, 78, 12)
+    bg.drawRect(100, py, 54, 78, 5)
+    bg.drawImage(photo, 103, py + 3)
+    return bg
+}
+// text centered in the left part of the screen (next to the photo)
+function leftText(bg: Image, im: Image, y: number) {
+    bg.drawTransparentImage(im, 48 - im.width / 2, y)
+}
+function showAndWait(bg: Image) {
     scene.setBackgroundImage(bg)
-    effects.confetti.startScreenEffect()
+    pause(600)
+    waitA()
+}
+function finaleEnd(bg: Image) {
+    scene.setBackgroundImage(bg)
+    confetti(5000)
     sfxGoal()
+    cheerSound()
     pause(800)
     waitA()
     game.reset()
 }
 
-// ---------------------------------------------------------------- main flow
+function finale() {
+    const bg = finaleBg(8, 1, unpack(PHOTO_TROPHY, 48), 34)
+    drawCenter(bg, hebrewTitleImg(5), 3)
+    leftText(bg, bigTextImg("אלוף!", 5, 15), 36)
+    leftText(bg, textImg("ניקוד " + totalScore, 1, 15), 70)
+    leftText(bg, textImg("A = שחק שוב", 9, 15), 100)
+    finaleEnd(bg)
+}
+
+// ---------------------------------------------------------------- Gal's game: גל גל להב - אתגר כדורגל
 
 // every stage is 3 tries, you need 2 to go on
 const NEED = 2
 
-welcome()
-playerCard()
+function playGal() {
+    welcome()
+    playerCard()
 
-const INTRO1 = ["חצים למעלה/למטה = גובה", "A = עצור כוונת, A = כוח", "חזק מדי = מעל המשקוף!"]
-stageIntro(1, "פנדלים", INTRO1)
-while (!stageResult("גולים", stagePenalties(), 3, NEED)) stageIntro(1, "פנדלים", INTRO1)
+    const FK = ["חצים = לכוון לכל מקום", "גבוה = מעל החומה!", "A = כוונת, A = כוח"]
+    playStage(1, "בעיטה חופשית", FK, () => stageResult("גולים", stageShootout(true), 3, NEED))
 
-const INTRO2 = ["שחקן הגנה מגיע!", "לחץ על הקומבו מהר", "ותעשה טריק מגניב!"]
-stageIntro(2, "טריקים", INTRO2)
-while (!stageResult("טריקים", stageSkills(), 3, NEED)) stageIntro(2, "טריקים", INTRO2)
+    const INTRO1 = ["חצים למעלה/למטה = גובה", "A = עצור כוונת, A = כוח", "חזק מדי = מעל המשקוף!"]
+    playStage(2, "פנדלים", INTRO1, () => stageResult("גולים", stageShootout(false), 3, NEED))
 
-const INTRO3 = ["חצים = לזוז לכל הכיוונים", "A = תיקול גלישה", "כשהטבעת זוהרת!"]
-stageIntro(3, "תיקולים", INTRO3)
-while (!stageResult("תיקולים", stageTackle(), 3, NEED)) stageIntro(3, "תיקולים", INTRO3)
+    const BAR = ["הכוונת זזה ליד הקורות", "A כשהיא ירוקה = על הקורה", "2 פגיעות ברצף!"]
+    playStage(3, "משקוף", BAR, () => stageResult("ברצף", stageBar(), 2, 2))
 
-const INTRO4 = ["שחקן, ספסל ושופט!", "A = אגרוף  B = בעיטה", "תתחמק מהכרטיסים!"]
-stageIntro(4, "קרב!", INTRO4)
-while (!stageResult("נוקאאוטים", stageFight(), 3, NEED)) stageIntro(4, "קרב!", INTRO4)
+    const INTRO2 = ["שחקן הגנה מגיע!", "לחץ על הקומבו מהר", "ותעשה טריק מגניב!"]
+    playStage(4, "טריקים", INTRO2, () => stageResult("טריקים", stageSkills(), 3, NEED))
 
-const INTRO5 = ["המשטרה רודפת אחריך!", "ברח דרך היציע והמדרגות", "אל יציאה צהובה קטנה!"]
-stageIntro(5, "בריחה!", INTRO5)
-while (!stageEscape()) stageIntro(5, "בריחה!", INTRO5)
+    const INTRO3 = ["חצים = לזוז לכל הכיוונים", "A = תיקול גלישה", "כשהטבעת זוהרת!"]
+    playStage(5, "תיקולים", INTRO3, () => stageResult("תיקולים", stageTackle(), 3, NEED))
 
-finale()
+    const INTRO4 = ["שחקן, ספסל ושופט!", "A = אגרוף  B = בעיטה", "תתחמק מהכרטיסים!"]
+    playStage(6, "קרב!", INTRO4, () => stageResult("נוקאאוטים", stageFight(), 3, NEED))
+
+    const INTRO5 = ["המשטרה רודפת אחריך!", "ברח דרך היציע והמדרגות", "אל יציאה צהובה קטנה!"]
+    playStage(7, "בריחה!", INTRO5, stageEscape)
+
+    finale()
+}
+
+// ---------------------------------------------------------------- game picker: choose one of 3 games
+
+const ICON_MEDAL = img`
+    ..2....8..
+    ...2..8...
+    ....28....
+    ...5555...
+    ..555555..
+    ..55cc55..
+    ..555555..
+    ...5555...
+`
+const ICON_BALL = img`
+    ..1111..
+    .1f11f1.
+    11ff1111
+    1111ff11
+    11f11ff1
+    1ff11111
+    .11ff11.
+    ..1111..
+`
+
+class GameEntry {
+    constructor(public title: string, public sub: string, public icon: Image, public color: number) { }
+}
+const GAMES = [
+    new GameEntry("אלונה טריאתלונה", "הדרך לאולימפיאדה", ICON_MEDAL.doubled(), 9),
+    new GameEntry("יפתח התותח", "אגדת דשא", ICON_BALL.doubled(), 7),
+    new GameEntry("גל גל להב", "אתגר כדורגל", PLAYER_A, 2),
+]
+
+function gameCard(g: GameEntry, selected: boolean): Image {
+    const im = image.create(150, 28)
+    im.fill(selected ? 8 : 12)
+    im.fillRect(0, 0, 150, 28, selected ? 8 : 15)
+    im.drawRect(0, 0, 150, 28, selected ? 5 : 10)
+    if (selected) im.drawRect(1, 1, 148, 26, 5)
+    // colored strip + icon on the right (Hebrew side)
+    im.fillRect(126, 2, 22, 24, g.color)
+    im.drawTransparentImage(g.icon, 137 - Math.idiv(g.icon.width, 2), 14 - Math.idiv(g.icon.height, 2))
+    const t = textImg(g.title, selected ? 5 : 1, 15)
+    im.drawTransparentImage(t, 122 - t.width, 2)
+    const s = textImg(g.sub, selected ? 1 : 11, 0)
+    im.drawTransparentImage(s, 122 - s.width, 15)
+    return im
+}
+
+function gamePicker(): number {
+    clearAll()
+    const bg = image.create(160, 120)
+    bg.fill(15)
+    for (let i = 0; i < 50; i++) bg.setPixel(randint(0, 159), randint(0, 119), randint(0, 3) == 0 ? 5 : 1)
+    drawCenter(bg, bigTextImg("בחר משחק", 5, 2), 1)
+    scene.setBackgroundImage(bg)
+    const cards: Sprite[] = []
+    for (let i = 0; i < GAMES.length; i++) cards.push(uiSprite(gameCard(GAMES[i], false), 80, 41 + i * 32))
+    let sel = 0
+    let shown = -1
+    let t = 0
+    clearKeys()
+    sfxWhistle()
+    while (true) {
+        t++
+        const k = popKey()
+        if (k == "U") { sel = (sel + GAMES.length - 1) % GAMES.length; music.playTone(660, 40) }
+        if (k == "D") { sel = (sel + 1) % GAMES.length; music.playTone(660, 40) }
+        if (k == "A") break
+        if (sel != shown) {
+            for (let i = 0; i < GAMES.length; i++) cards[i].setImage(gameCard(GAMES[i], i == sel))
+            shown = sel
+        }
+        // the chosen card wiggles
+        for (let i = 0; i < GAMES.length; i++) cards[i].x = i == sel ? 80 + Math.sin(t / 5) * 2 : 80
+        pause(20)
+    }
+    sfxWhistle()
+    burst(cards[sel], 400)
+    pause(400)
+    return sel
+}
+
+// ---------------------------------------------------------------- start: the game picker
+// (main.ts is always loaded last, so this runs after every other file is ready)
+
+while (true) {
+    const choice = gamePicker()
+    currentGame = choice
+    if (choice == 0) playAlona()
+    else if (choice == 1) playYiftach()
+    else playGal()
+}

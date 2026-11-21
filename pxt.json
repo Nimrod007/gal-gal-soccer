@@ -8,6 +8,8 @@
     "files": [
         "stills.ts",
         "main.ts",
+        "alona.ts",
+        "yiftach.ts",
         "README.md",
         "assets.json"
     ],
@@ -33,7 +35,7 @@
         "#78DC52",
         "#003FAD",
         "#87F2FF",
-        "#8A8A8A",
+        "#6A2FB0",
         "#C8C8C8",
         "#D8A82C",
         "#F2C6A6",
