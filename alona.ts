@@ -1018,6 +1018,9 @@ function sneakStage(): boolean {
     const faces = [uiSprite(imgs[0][1], 48, 42), uiSprite(imgs[1][2], 112, 42)]
     const look = [1, 2]
     const tm = [40, 70]
+    const warn = [0, 0]
+    const hey = speechImg("?!")
+    const bub = [uiSprite(hey, 48, 14), uiSprite(hey, 112, 14)]
     const fist = handImg(false).doubled()
     const finger = handImg(true).doubled()
     const hand = uiSprite(fist, 80, 90)
@@ -1026,40 +1029,38 @@ function sneakStage(): boolean {
     let lives = 3
     let gest = 0
     clearKeys()
-    while (done < 3 && lives > 0) {
+    while (done < 5 && lives > 0) {
         for (let f = 0; f < 2; f++) {
-            if (--tm[f] <= 0) {
-                const r = randint(0, 6)
-                look[f] = r > 4 ? 0 : r                             // often they look straight at you
-                tm[f] = look[f] == 0 ? 45 : randint(25, 80)
-                faces[f].setImage(imgs[f][look[f]])
+            let w = warn[f], l = look[f], t = tm[f] - 1
+            if (w > 0) {                                            // "?!" = about to turn to you
+                w--
+                if (w == 0) { l = 0; t = randint(35, 55) }
+            } else if (t <= 0) {
+                if (l > 0 && randint(0, 2) == 0) w = 28 - done * 3
+                else { l = randint(1, 4); t = randint(30, 70) - done * 6 }
             }
+            warn[f] = w; look[f] = l; tm[f] = t
+            faces[f].setImage(imgs[f][l])
+            bub[f].setFlag(SpriteFlag.Invisible, w == 0)
         }
-        if (gest == 0 && popA()) {
-            gest = 30
+        if (gest > 0 && --gest == 0) hand.setImage(fist)
+        if (gest == 0 && popA()) {                                  // judged the moment you press
+            gest = 25
             hand.setImage(finger)
-            hand.y = 84
-        }
-        if (gest > 0) {
-            gest--
             if (look[0] == 0 || look[1] == 0) {
                 lives--
-                gest = 0
                 failBanner("נתפסת!")
                 scene.cameraShake(3, 250)
                 pause(900)
-            } else if (gest == 0) {
+                gest = 1
+            } else {
                 done++
-                banner("חחח! לא ראו!", 5, 64, 800)
+                banner("חחח! לא ראו!", 5, 64, 700)
                 snd(600, 1200, 200)
             }
-            if (gest == 0) {
-                hand.setImage(fist)
-                hand.y = 90
-                clearKeys()
-            }
+            clearKeys()
         }
-        top.setImage(hud("מאחורי הגב", done + "/3  חיים " + lives))
+        top.setImage(hud("מאחורי הגב", done + "/5  חיים " + lives))
         pause(16)
     }
     if (lives == 0) {
@@ -1098,7 +1099,7 @@ function playAlona() {
     stageIntro(7, "בונוס!", ["A B A B מהר = ריצה", "A = סטירה", "קח את המקום הראשון!"])
     bonusStage()
 
-    const SN = ["כשהם מסתכלים לצדדים...", "A = האצבע האמצעית!", "מסתכלים עליך? נתפסת!"]
+    const SN = ["כשהם מסתכלים לצדדים...", "A = האצבע האמצעית! 5 פעמים", "?! = עוד רגע מסתכלים עליך"]
     playStage(8, "מאחורי הגב", SN, sneakStage)
 
     const MI = ["הקריינית לא מפסיקה לדבר!", "חצים = לחטוף את המיקרופון", "וברח ליציאה בלי שתתפוס!"]
